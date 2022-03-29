@@ -1,0 +1,13 @@
+##conda env create --file new_coastseg.yml
+name: machine_learning
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - tensorflow
+  - scikit-image
+  - scikit-learn
+  - jupyter
+  - ipython
+  - tqdm
+  - matplotlib
