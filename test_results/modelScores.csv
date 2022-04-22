@@ -10,3 +10,4 @@ Accuracy,Test Loss,Model Description
 0.8305084705352783,0.562666118144989,redid entire model after research
 0.0,1.0,model after data_cleaning
 0.0,1.0,refined model with data pipeline 4.22.2022
+0.8799999952316284,0.30558478832244873,refined model with feedback
