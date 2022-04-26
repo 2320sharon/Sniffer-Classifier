@@ -11,3 +11,5 @@ Accuracy,Test Loss,Model Description
 0.0,1.0,model after data_cleaning
 0.0,1.0,refined model with data pipeline 4.22.2022
 0.8799999952316284,0.30558478832244873,refined model with feedback
+0.9900000095367432,0.14586149156093597,model5_random_over_sampling
+0.9900000095367432,0.10224533081054688,model5_random_over_sampling_precision
