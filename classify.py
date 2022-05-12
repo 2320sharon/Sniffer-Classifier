@@ -1,32 +1,40 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-from PIL import Image,ImageEnhance
-from datetime import datetime
-from io import BytesIO
+# import numpy as np
+from numpy import asarray,round
+from PIL import Image
 import tensorflow as tf
-from tensorflow import keras
 from skimage.transform import resize
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-uploaded_files = st.file_uploader("Choose a jpg file",type=['png', 'jpg','jpeg'], accept_multiple_files=True)
+
+uploaded_files = st.file_uploader("Choose a jpg file",type=['png', 'jpg','jpeg'], accept_multiple_files=True,key="upload_files_comp")
 for uploaded_file in uploaded_files:
      bytes_data = uploaded_file.read()
 images_list=uploaded_files
 
-# # @st.cache
-model=tf.keras.models.load_model('model',compile = True)
-# # Output label of good or bad for the model.
-label=None
+# Load the tensorflow model only once
+@st.experimental_singleton
+def get_model(model_name:str,model_path:str=os.getcwd()+ os.sep+"models"):
+    model_path+=os.sep+model_name
+    model = tf.keras.models.load_model(model_path+os.sep+"model")
+    return model
 
+# Load the model from the singleton cache
+model=get_model("binary_classification_model_v_2_2")
+# Initialize the  states
+if 'label' not in st.session_state:
+    st.session_state.label=None
+if 'prediction' not in st.session_state:
+    st.session_state.prediction=None
 # Initialize the session state to have the current image index=0
 if 'img_idx' not in st.session_state:
     st.session_state.img_idx=0
 
+
 # Ensure img_idx will always be within images_list
-if st.session_state.img_idx > (len(images_list)):
+if st.session_state.img_idx > (len(images_list)+2):
     st.session_state.img_idx = (len(images_list)-1) if (len(images_list)-1)>0 else 0
 
 
@@ -80,11 +88,11 @@ with col2:
         st.image(image, caption=caption,width=300)
 
 
-def pre_process_img(image):
-    size=(250,500)
-    img=image.resize(size,Image.ANTIALIAS)
-    imgArray = np.asarray(img)
-    imgArray=imgArray.reshape((1,250,500,3))# Create batch axis
+def pre_process_img(image,img_shape:tuple)->list:
+    """returns np.array resized to (1,img_shape,3)"""
+    img=image.resize(img_shape,Image.ANTIALIAS)
+    imgArray = asarray(img)
+    imgArray=imgArray.reshape((1,)+img_shape+(3,))# Create batch axis
     return imgArray
 
 
@@ -97,17 +105,20 @@ def run_predict():
     if 0<=img_index<(len(images_list)) and images_list !=  []:
         img=images_list[img_index]
         img = Image.open(img)
-        img_array=pre_process_img(img)
-        prediction=model.predict(img_array)
-        reverse_mapping={0:"good",1:"bad"}
+        img_shape=(100,100)
+        img_array=pre_process_img(img,img_shape)
+        predictions=model.predict(img_array)
+        reverse_mapping={0:"bad",1:"good"}
         # # Transform the array of predictions into a 1d array then return the index of the column with the max prediction
         # # Use the max prediction as the key to the label dictionary
-        label=reverse_mapping[prediction.flatten().argmax(axis=0)]
-        st.write(label)
+        st.session_state.label=reverse_mapping[predictions[0][0].astype('uint8')]
+        st.session_state.prediction=round(predictions[0][0],decimals=5)
 
 
 with col4:
     st.button(label="Predict Image",key="predict_button",on_click=run_predict)
-    if label:
-        label
+    if st.session_state.prediction!=  None:
+        st.write(f"Prediction: {st.session_state.prediction}")
+    if st.session_state.label != None:
+        st.write("Label:",st.session_state.label)
 
