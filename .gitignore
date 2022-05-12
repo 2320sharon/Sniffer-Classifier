@@ -1,4 +1,9 @@
+# Local Folders to ignore
 images/*jpg
+test_images/*jpg
+logs/*
+old_csv/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
