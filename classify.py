@@ -3,6 +3,7 @@ import streamlit as st
 from numpy import asarray,round
 from PIL import Image
 import tensorflow as tf
+import numpy  as np
 from skimage.transform import resize
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -22,7 +23,7 @@ def get_model(model_name:str,model_path:str=os.getcwd()+ os.sep+"models"):
     return model
 
 # Load the model from the singleton cache
-model=get_model("binary_classification_model_v_2_2")
+model=get_model("binary_classification_model_v_2_1")
 # Initialize the  states
 if 'label' not in st.session_state:
     st.session_state.label=None
@@ -115,10 +116,33 @@ def run_predict():
         st.session_state.prediction=round(predictions[0][0],decimals=5)
 
 
+def create_prediction_ready_data(images_list:list,img_shape:tuple):
+    """returns a numpy array of the shape (number_images,img_shape,3)"""
+    images=[]
+    for image in images_list:
+        img=Image.open(image)
+        img_array=pre_process_img(img,img_shape)
+        images.append(img_array)
+    data=np.vstack(images)
+    return data
+
+def run_predict_all():
+    # Make sure the images list is not empty and the index is valid
+    if images_list !=  []:
+        img_shape=(100,100)
+        data=create_prediction_ready_data(images_list,img_shape)
+        # img_array=pre_process_img(img,img_shape)
+        predictions=model.predict(data)
+        predictions=predictions.flatten().tolist()
+        labeled_predictions=list(map(lambda x: "good "if x>=0.5 else "bad",predictions))
+        st.write(labeled_predictions)
+
+
 with col4:
     st.button(label="Predict Image",key="predict_button",on_click=run_predict)
     if st.session_state.prediction!=  None:
         st.write(f"Prediction: {st.session_state.prediction}")
     if st.session_state.label != None:
         st.write("Label:",st.session_state.label)
+    st.button(label="Predict All Images",key="predict_all_button",on_click=run_predict_all)
 
