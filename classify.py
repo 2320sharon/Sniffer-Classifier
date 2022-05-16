@@ -1,6 +1,7 @@
 import streamlit as st
 # import numpy as np
 from numpy import asarray,round
+import pandas as pd
 from PIL import Image
 import tensorflow as tf
 import numpy  as np
@@ -32,6 +33,9 @@ if 'prediction' not in st.session_state:
 # Initialize the session state to have the current image index=0
 if 'img_idx' not in st.session_state:
     st.session_state.img_idx=0
+if 'prediction_df' not in st.session_state:
+    st.session_state.prediction_df=pd.DataFrame(columns=["Filename","Predicted_Label","Probability"])
+
 
 
 # Ensure img_idx will always be within images_list
@@ -126,6 +130,13 @@ def create_prediction_ready_data(images_list:list,img_shape:tuple):
     data=np.vstack(images)
     return data
 
+def create_predictions_df(predictions):
+    labeled_predictions=list(map(lambda x: "good "if x>=0.5 else "bad",predictions))
+
+    for i,img in enumerate(images_list):
+        row={"Filename":img.name,'Predicted_Label':labeled_predictions[i],'Probability':predictions[i]}
+        st.session_state.prediction_df=pd.concat([st.session_state.prediction_df,pd.DataFrame.from_records([row])],ignore_index=True)
+    
 def run_predict_all():
     # Make sure the images list is not empty and the index is valid
     if images_list !=  []:
@@ -134,8 +145,8 @@ def run_predict_all():
         # img_array=pre_process_img(img,img_shape)
         predictions=model.predict(data)
         predictions=predictions.flatten().tolist()
-        labeled_predictions=list(map(lambda x: "good "if x>=0.5 else "bad",predictions))
-        st.write(labeled_predictions)
+        create_predictions_df(predictions)
+
 
 
 with col4:
@@ -144,5 +155,10 @@ with col4:
         st.write(f"Prediction: {st.session_state.prediction}")
     if st.session_state.label != None:
         st.write("Label:",st.session_state.label)
+
     st.button(label="Predict All Images",key="predict_all_button",on_click=run_predict_all)
+
+with st.expander("View Predictions"):
+    if  st.session_state.prediction_df.empty ==False:       
+        st.write(st.session_state.prediction_df)
 
