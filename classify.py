@@ -81,13 +81,18 @@ col1,col2,col3,col4=st.columns(4)
 with col1:
     st.button(label="Next",key="next_button",on_click=next_button)
     st.button(label="Back",key="back_button",on_click=back_button)
-    
+
+# Display a the image at the current img_idx
 with col2:
-    # Display done.jpg when all images are sorted 
+    # Display a the done image when the all images have been displayed
     if st.session_state.img_idx>=len(images_list):
         image = Image.open("./assets/done.jpg")
         st.image(image,width=300)
     else:
+        st.write("Index",st.session_state.img_idx)
+        if st.session_state.prediction_df.empty ==False:
+            curr_pred=st.session_state.prediction_df[st.session_state.prediction_df["Filename"]==images_list[st.session_state.img_idx].name]
+            st.write("Predicted as ",curr_pred["Predicted_Label"].iloc[0],"with ",curr_pred["Probability"].iloc[0])
         # caption is "" when images_list is empty otherwise its image name 
         caption = '' if images_list==[] else f'#{st.session_state.img_idx} {images_list[st.session_state.img_idx].name}'
         st.image(image, caption=caption,width=300)
@@ -132,7 +137,6 @@ def create_prediction_ready_data(images_list:list,img_shape:tuple):
 
 def create_predictions_df(predictions):
     labeled_predictions=list(map(lambda x: "good "if x>=0.5 else "bad",predictions))
-
     for i,img in enumerate(images_list):
         row={"Filename":img.name,'Predicted_Label':labeled_predictions[i],'Probability':predictions[i]}
         st.session_state.prediction_df=pd.concat([st.session_state.prediction_df,pd.DataFrame.from_records([row])],ignore_index=True)
